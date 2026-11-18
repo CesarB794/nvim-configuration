@@ -325,11 +325,38 @@ vim.keymap.set('n', '<space>t', terminal_toggle, { desc = 'Terminal toggle (spli
 vim.keymap.set('n', '<space>tt', terminal_destroy, { desc = 'Destruir terminales' })
 vim.keymap.set('n', '<space>pp', python_run_file, { desc = 'Ejecutar archivo Python' })
 
+-- Al escribir "exit" dentro de la terminal: si el proceso terminó limpio,
+-- cerrar automáticamente la ventana y limpiar el buffer (sin la pantalla
+-- "[Process exited 0]"). Si terminó con error, la ventana se queda abierta
+-- para poder inspeccionar el motivo.
+vim.api.nvim_create_autocmd('TermClose', {
+  group = vim.api.nvim_create_augroup('terminal-autoclose', { clear = true }),
+  callback = function(args)
+    if vim.v.event.status == 0 then
+      vim.schedule(function()
+        -- cerrar la ventana que muestra este buffer (si hay otras ventanas)
+        local win = vim.fn.bufwinid(args.buf)
+        if win ~= -1 and #vim.api.nvim_tabpage_list_wins(0) > 1 then
+          vim.api.nvim_win_close(win, false)
+        end
+        -- y eliminar el buffer terminal del listado
+        pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
+      end)
+    end
+  end,
+})
+
 -- ---------------------------------------------------------------------------
 -- Explorador de archivos (antes coc-explorer <space>w → netrw nativo)
--- Abre/cierra un split DERECHO con netrw (toggle). NERDTree sigue disponible
--- con :NERDTreeToggle.
+-- Abre/cierra un split IZQUIERDO con netrw (toggle); el código queda siempre
+-- a la derecha. Enter abre el archivo en la ventana del editor sin cerrar el
+-- explorador (netrw_browse_split=4 → "ventana anterior").
+-- NERDTree sigue disponible con :NERDTreeToggle.
 -- ---------------------------------------------------------------------------
+-- Enter sobre un archivo → se abre en la ventana previa (el editor),
+-- y la lista de archivos permanece en el explorador:
+vim.g.netrw_browse_split = 4
+
 local function explorer_toggle()
   -- Si ya hay un netrw abierto en algún split de esta pestaña, ciérralo
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -339,8 +366,8 @@ local function explorer_toggle()
       return
     end
   end
-  -- Split vertical a la derecha, altura completa, con el explorador
-  vim.cmd('botright vsplit')
+  -- Split vertical a la izquierda, altura completa, con el explorador
+  vim.cmd('topleft vsplit')
   vim.api.nvim_win_set_width(0, 38)
   vim.cmd('Explore')
 end
