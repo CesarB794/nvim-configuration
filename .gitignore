@@ -1,0 +1,13 @@
+# Copias de seguridad locales (no versionar)
+init.back
+*.bak
+
+# Directorio antiguo con .git embebido (Neobundle)
+initVim/
+
+# Config por máquina (overrides locales)
+local.lua
+
+# Basura de Windows
+desktop.ini
+Thumbs.db
