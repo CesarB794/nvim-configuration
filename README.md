@@ -31,9 +31,20 @@ nvim
 | TS/JS | ts_ls | `npm i -g typescript typescript-language-server` |
 | JSON/HTML/CSS | — | `npm i -g vscode-langservers-extracted` |
 | Vimscript | vimls | `npm i -g vim-language-server` |
+| PowerShell | powershell_es | Descargar [PowerShellEditorServices.zip](https://github.com/PowerShell/PowerShellEditorServices/releases) y extraer en `stdpath('data')/lsp` |
 | Clojure | clojure_lsp | https://clojure-lsp.io (descomentar en init.lua) |
 
 Verificación: `:checkhealth vim.lsp`
+
+## Integración con PowerShell (Windows)
+
+- Nvim usa `powershell.exe` como shell interno (`:!`, `:make`, terminales `<space>t`)
+- El perfil de PS (`Documents\WindowsPowerShell\profile.ps1`, no versionado) añade:
+  `vi`/`vim` → nvim, `$env:EDITOR=nvim`, **PSReadLine modo Vi**, **PSFzf** (Ctrl+R historial, Ctrl+T ficheros)
+- `git config core.editor nvim` — los commits de git abren Nvim
+- Dependencias de PS: `winget install junegunn.fzf` + `Install-Module PSFzf -Scope CurrentUser`
+- Para compilar los parsers tree-sitter en máquina nueva:
+  `winget install LLVM.LLVM tree-sitter.tree-sitter-cli`
 
 ## Estructura
 

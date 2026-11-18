@@ -29,6 +29,18 @@ if vim.g.python3_host_prog == nil then
 end
 
 -- ---------------------------------------------------------------------------
+-- PowerShell como shell interno de Nvim (:!, :make, :terminal, <space>t)
+-- ---------------------------------------------------------------------------
+if vim.fn.has('win32') == 1 then
+  vim.opt.shell = 'powershell.exe'
+  vim.opt.shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command'
+  vim.opt.shellquote = ''
+  vim.opt.shellxquote = ''
+  vim.opt.shellredir = '2>&1 | Out-File -Encoding UTF8 %s'
+  vim.opt.shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+end
+
+-- ---------------------------------------------------------------------------
 -- Bootstrap de vim-plug (auto-instalación en máquinas nuevas)
 -- ---------------------------------------------------------------------------
 local plug_path = vim.fn.stdpath('data') .. '/site/autoload/plug.vim'
@@ -92,6 +104,7 @@ if ok_ts then
   ts.install({
     'c', 'cpp', 'go', 'python', 'typescript', 'javascript', 'json', 'html',
     'css', 'vim', 'vimdoc', 'lua', 'markdown', 'markdown_inline', 'clojure',
+    'powershell',
   })
 
   -- Activar el resaltado nativo de Nvim; si no hay parser para el filetype,
@@ -158,9 +171,26 @@ local servers = {
   'html',        -- HTML    → npm i -g vscode-langservers-extracted
   'cssls',       -- CSS     → npm i -g vscode-langservers-extracted
   'vimls',       -- Vimscript → npm i -g vim-language-server
+  'powershell_es', -- PowerShell (bundle en nvim-data/lsp; ver README)
   -- 'clojure_lsp', -- Clojure → instalar de https://clojure-lsp.io y descomentar
 }
 vim.lsp.enable(servers)
+
+-- PowerShell LSP (PowerShellEditorServices de Microsoft)
+-- Instalación: descargar el zip de
+--   https://github.com/PowerShell/PowerShellEditorServices/releases
+-- y extraerlo en stdpath('data')/lsp → queda /lsp/PowerShellEditorServices/...
+-- (bundle_path apunta al PADRE del módulo: lspconfig añade
+--  'PowerShellEditorServices/Start-EditorServices.ps1' a la ruta)
+local pses_path = vim.fn.stdpath('data') .. '/lsp'
+if vim.fn.isdirectory(pses_path .. '/PowerShellEditorServices') == 1 then
+  vim.lsp.config('powershell_es', {
+    bundle_path = pses_path,
+    shell = 'powershell.exe', -- lspconfig usa 'pwsh' por defecto (no instalado aquí)
+    -- lspconfig declara solo {'ps1'}, pero el filetype real de Nvim es 'powershell'
+    filetypes = { 'powershell', 'ps1' },
+  })
+end
 
 -- Ajustes para eliminar warnings de :checkhealth vim.lsp
 -- (lspconfig declara filetypes que Nvim no tiene definidos y nunca ocurren)
