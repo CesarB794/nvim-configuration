@@ -296,12 +296,15 @@ end, { desc = 'Organizar imports' })
 
 -- ---------------------------------------------------------------------------
 -- Terminal nativa (antes coc-terminal: <space>t / <space>tt / <space>pp)
+-- La terminal abre en un split INFERIOR que ejecuta powershell.exe
+-- (ver vim.opt.shell arriba).
 -- ---------------------------------------------------------------------------
 local function terminal_toggle()
   if vim.bo.buftype == 'terminal' then
-    vim.cmd('quit')                 -- sale/vuelve del terminal
+    vim.cmd('quit')                    -- oculta la terminal (toggle)
   else
-    vim.cmd('12split | terminal')   -- split abajo, como el float de coc-terminal
+    local h = math.max(8, math.floor(vim.o.lines * 0.3))
+    vim.cmd('botright ' .. h .. 'split | terminal')  -- franja inferior, ancho completo
   end
 end
 
@@ -315,18 +318,34 @@ end
 
 local function python_run_file()
   vim.cmd('write')
-  vim.cmd(('12split | terminal python "%s"'):format(vim.fn.expand('%:p')))
+  vim.cmd(('belowright split | terminal powershell -NoLogo -NoProfile -Command "python \'%s\'"'):format(vim.fn.expand('%:p')))
 end
 
-vim.keymap.set('n', '<space>t', terminal_toggle, { desc = 'Terminal toggle' })
+vim.keymap.set('n', '<space>t', terminal_toggle, { desc = 'Terminal toggle (split abajo)' })
 vim.keymap.set('n', '<space>tt', terminal_destroy, { desc = 'Destruir terminales' })
 vim.keymap.set('n', '<space>pp', python_run_file, { desc = 'Ejecutar archivo Python' })
 
 -- ---------------------------------------------------------------------------
 -- Explorador de archivos (antes coc-explorer <space>w → netrw nativo)
--- NERDTree sigue disponible con :NERDTreeToggle
+-- Abre/cierra un split DERECHO con netrw (toggle). NERDTree sigue disponible
+-- con :NERDTreeToggle.
 -- ---------------------------------------------------------------------------
-vim.keymap.set('n', '<space>w', vim.cmd.Ex, { desc = 'Explorador (netrw)' })
+local function explorer_toggle()
+  -- Si ya hay un netrw abierto en algún split de esta pestaña, ciérralo
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local b = vim.api.nvim_win_get_buf(win)
+    if vim.bo[b].filetype == 'netrw' then
+      vim.api.nvim_win_close(win, false)
+      return
+    end
+  end
+  -- Split vertical a la derecha, altura completa, con el explorador
+  vim.cmd('botright vsplit')
+  vim.api.nvim_win_set_width(0, 38)
+  vim.cmd('Explore')
+end
+
+vim.keymap.set('n', '<space>w', explorer_toggle, { desc = 'Explorador toggle (split derecho)' })
 
 -- ---------------------------------------------------------------------------
 -- Snippets nativos con friendly-snippets (sustituye a UltiSnips)
