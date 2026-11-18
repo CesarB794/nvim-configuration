@@ -9,7 +9,7 @@ Sin Node.js residente: los servers solo se lanzan al abrir un buffer de su lengu
 
 ```powershell
 # Si ya existe un nvim antiguo, respáldalo primero
-git clone <URL-DE-ESTE-REPO> "$env:LOCALAPPDATA\nvim"
+git clone https://github.com/CesarB794/nvim-configuration.git "$env:LOCALAPPDATA\nvim"
 nvim  # el primer arranque instala vim-plug y los plugins automáticamente
 ```
 
@@ -17,7 +17,7 @@ nvim  # el primer arranque instala vim-plug y los plugins automáticamente
 
 ```bash
 # respaldo previo si aplica: mv ~/.config/nvim ~/.config/nvim.bak
-git clone <URL-DE-ESTE-REPO> ~/.config/nvim
+git clone https://github.com/CesarB794/nvim-configuration.git ~/.config/nvim
 nvim
 ```
 
