@@ -65,19 +65,56 @@ plug('junegunn/vim-easy-align')
 plug('fatih/vim-go')                     -- tooling Go (complementa gopls)
 plug('neovim/nvim-lspconfig')            -- catálogo de definiciones de servers
 plug('rafamadriz/friendly-snippets')     -- snippets para :Snip (ver abajo)
+plug('nvim-treesitter/nvim-treesitter', { branch = 'main', ['do'] = ':TSUpdate' })
+plug('nvim-treesitter/nvim-treesitter-textobjects', { branch = 'main' })
 vim.call('plug#end')
 
 -- Primera ejecución en una máquina nueva: instalar lo que falte y recargar
 local missing_plugins = {}
 for _, spec in pairs(vim.g.plugs or {}) do
   if vim.fn.isdirectory(spec.dir) == 0 then
-    missing_plugins[#missing_plugins + 1] = vim.fs.basename(spec.dir)
+    missing_plugins[#missing_plugins + 1] = vim.fn.fnamemodify(spec.dir, ':t')
   end
 end
 if #missing_plugins > 0 then
   vim.notify('Instalando plugins faltantes: ' .. table.concat(missing_plugins, ', '))
   vim.cmd('PlugInstall --sync')
   vim.cmd('source $MYVIMRC')
+end
+
+-- ---------------------------------------------------------------------------
+-- tree-sitter: resaltado por árbol de sintaxis real (requiere tree-sitter-cli
+-- y un compilador de C en PATH; los parsers se compilan localmente).
+-- ---------------------------------------------------------------------------
+local ok_ts, ts = pcall(require, 'nvim-treesitter')
+if ok_ts then
+  -- Parsers de los lenguajes de uso diario (no-op si ya están instalados)
+  ts.install({
+    'c', 'cpp', 'go', 'python', 'typescript', 'javascript', 'json', 'html',
+    'css', 'vim', 'vimdoc', 'lua', 'markdown', 'markdown_inline', 'clojure',
+  })
+
+  -- Activar el resaltado nativo de Nvim; si no hay parser para el filetype,
+  -- queda el resaltado por regex como fallback.
+  vim.api.nvim_create_autocmd('FileType', {
+    group = vim.api.nvim_create_augroup('treesitter-highlight', { clear = true }),
+    callback = function(args)
+      if pcall(vim.treesitter.start, args.buf) then
+        vim.bo[args.buf].syntax = '' -- evitar doble resaltado (treesitter + regex)
+      end
+    end,
+  })
+end
+
+-- Text objects por símbolo con tree-sitter (restaura if/af/ic/ac de CoC,
+-- con selección estructural precisa).
+local ok_to, ts_select = pcall(require, 'nvim-treesitter-textobjects.select')
+if ok_to then
+  local to_opts = { silent = true }
+  vim.keymap.set({ 'x', 'o' }, 'if', function() ts_select.select_textobject('@function.inner', 'textobjects') end, to_opts)
+  vim.keymap.set({ 'x', 'o' }, 'af', function() ts_select.select_textobject('@function.outer', 'textobjects') end, to_opts)
+  vim.keymap.set({ 'x', 'o' }, 'ic', function() ts_select.select_textobject('@class.inner', 'textobjects') end, to_opts)
+  vim.keymap.set({ 'x', 'o' }, 'ac', function() ts_select.select_textobject('@class.outer', 'textobjects') end, to_opts)
 end
 
 -- ---------------------------------------------------------------------------
